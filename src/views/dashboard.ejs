@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Task Dashboard</title>
+  <style>
+    :root {
+      --bg-primary: #0f1117;
+      --bg-secondary: #1a1d27;
+      --bg-card: #222536;
+      --border: #2e3348;
+      --text-primary: #e4e6f0;
+      --text-secondary: #8b8fa8;
+      --accent: #6c5ce7;
+      --accent-hover: #7f71ef;
+      --green: #00b894;
+      --yellow: #fdcb6e;
+      --orange: #e17055;
+      --red: #d63031;
+      --blue: #0984e3;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header h1 { font-size: 20px; font-weight: 600; }
+    header h1 span { color: var(--accent); }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 0;
+      min-height: calc(100vh - 57px);
+    }
+
+    .main { padding: 24px 32px; }
+
+    /* Stats bar */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .stat-card .label { font-size: 12px; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.5px; }
+    .stat-card .value { font-size: 32px; font-weight: 700; margin-top: 4px; }
+    .stat-card.critical .value { color: var(--red); }
+    .stat-card.done .value { color: var(--green); }
+    .stat-card.progress .value { color: var(--blue); }
+
+    /* Actions bar */
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .actions h2 { font-size: 16px; font-weight: 600; }
+
+    .btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .btn:hover { background: var(--accent-hover); }
+    .btn-sm { padding: 5px 12px; font-size: 12px; }
+    .btn-danger { background: var(--red); }
+    .btn-danger:hover { background: #c0392b; }
+    .btn-secondary { background: var(--bg-card); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: var(--border); }
+
+    /* Error banner */
+    .error-banner {
+      background: rgba(214, 48, 49, 0.15);
+      border: 1px solid var(--red);
+      border-radius: 6px;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      color: var(--red);
+    }
+
+    /* Table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--bg-card);
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    th {
+      background: var(--bg-secondary);
+      text-align: left;
+      padding: 12px 16px;
+      font-size: 11px;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+
+    td {
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+      font-size: 13px;
+    }
+
+    tr:hover td { background: rgba(108, 92, 231, 0.04); }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .badge-todo       { background: rgba(139,143,168,0.2); color: var(--text-secondary); }
+    .badge-in_progress { background: rgba(9,132,227,0.2); color: var(--blue); }
+    .badge-done        { background: rgba(0,184,148,0.2); color: var(--green); }
+
+    .priority-low      { color: var(--text-secondary); }
+    .priority-medium   { color: var(--yellow); }
+    .priority-high     { color: var(--orange); }
+    .priority-critical { color: var(--red); font-weight: 700; }
+
+    .empty-state {
+      text-align: center;
+      padding: 48px;
+      color: var(--text-secondary);
+    }
+
+    /* Sidebar */
+    .sidebar {
+      background: var(--bg-secondary);
+      border-left: 1px solid var(--border);
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .sidebar h3 {
+      font-size: 13px;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
+    }
+
+    .activity-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+
+    .activity-item .event-type {
+      font-weight: 600;
+      color: var(--accent);
+      text-transform: uppercase;
+      font-size: 10px;
+      letter-spacing: 0.5px;
+    }
+
+    .activity-item .event-title {
+      margin-top: 4px;
+      color: var(--text-primary);
+    }
+
+    .activity-item .event-time {
+      margin-top: 4px;
+      color: var(--text-secondary);
+      font-size: 11px;
+    }
+
+    .activity-empty {
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-style: italic;
+    }
+
+    /* Create task modal / form */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-overlay.active { display: flex; }
+
+    .modal {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 28px;
+      width: 480px;
+      max-width: 95vw;
+    }
+
+    .modal h2 { font-size: 18px; margin-bottom: 20px; }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 9px 12px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-size: 13px;
+      font-family: inherit;
+    }
+
+    .form-group textarea { resize: vertical; min-height: 70px; }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+
+    .task-actions { white-space: nowrap; }
+    .task-actions button { margin-left: 4px; }
+
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { border-left: none; border-top: 1px solid var(--border); }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1><span>&#9632;</span> Task Dashboard</h1>
+    <span style="color: var(--text-secondary); font-size: 13px;">Connected to API</span>
+  </header>
+
+  <div class="layout">
+    <div class="main">
+      <!-- Stats -->
+      <div class="stats">
+        <div class="stat-card">
+          <div class="label">Total Tasks</div>
+          <div class="value"><%= stats.total %></div>
+        </div>
+        <div class="stat-card progress">
+          <div class="label">In Progress</div>
+          <div class="value"><%= stats.inProgress %></div>
+        </div>
+        <div class="stat-card done">
+          <div class="label">Done</div>
+          <div class="value"><%= stats.done %></div>
+        </div>
+        <div class="stat-card critical">
+          <div class="label">Critical Priority</div>
+          <div class="value"><%= stats.critical %></div>
+        </div>
+      </div>
+
+      <% if (apiError) { %>
+        <div class="error-banner"><strong>API Error:</strong> <%= apiError %></div>
+      <% } %>
+
+      <!-- Actions -->
+      <div class="actions">
+        <h2>Tasks</h2>
+        <button class="btn" onclick="openModal()">+ Create Task</button>
+      </div>
+
+      <!-- Task Table -->
+      <% if (tasks.length === 0) { %>
+        <div class="empty-state">
+          <p>No tasks yet. Create one to get started.</p>
+        </div>
+      <% } else { %>
+        <table>
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Assignee</th>
+              <th>Priority</th>
+              <th>Status</th>
+              <th>Updated</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% tasks.forEach(function(task) { %>
+              <tr>
+                <td><strong><%= task.title %></strong></td>
+                <td><%= task.assignee || '—' %></td>
+                <td>
+                  <span class="priority-<%= task.priority || 'medium' %>">
+                    <%= (task.priority || 'medium').toUpperCase() %>
+                  </span>
+                </td>
+                <td>
+                  <span class="badge badge-<%= task.status || 'todo' %>">
+                    <%= (task.status || 'todo').replace('_', ' ') %>
+                  </span>
+                </td>
+                <td style="color: var(--text-secondary); font-size: 12px;">
+                  <%= task.updated_at ? new Date(task.updated_at).toLocaleDateString() : '—' %>
+                </td>
+                <td class="task-actions">
+                  <% if (task.status !== 'done') { %>
+                    <button class="btn btn-sm btn-secondary"
+                            onclick="updateStatus('<%= task.id %>', 'done')">
+                      Done
+                    </button>
+                  <% } %>
+                  <% if (task.status === 'todo') { %>
+                    <button class="btn btn-sm btn-secondary"
+                            onclick="updateStatus('<%= task.id %>', 'in_progress')">
+                      Start
+                    </button>
+                  <% } %>
+                  <button class="btn btn-sm btn-danger"
+                          onclick="deleteTask('<%= task.id %>')">
+                    Del
+                  </button>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      <% } %>
+    </div>
+
+    <!-- Activity Sidebar -->
+    <div class="sidebar">
+      <h3>Activity Feed</h3>
+      <div id="activity-feed">
+        <% if (activity.length === 0) { %>
+          <p class="activity-empty">No recent activity. Webhook events will appear here.</p>
+        <% } else { %>
+          <% activity.forEach(function(evt) { %>
+            <div class="activity-item">
+              <div class="event-type"><%= evt.type %></div>
+              <div class="event-title"><%= evt.title || evt.taskId || 'Task update' %></div>
+              <div class="event-time"><%= evt.receivedAt ? new Date(evt.receivedAt).toLocaleString() : '' %></div>
+            </div>
+          <% }); %>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Task Modal -->
+  <div class="modal-overlay" id="create-modal">
+    <div class="modal">
+      <h2>Create Task</h2>
+      <form id="create-form" onsubmit="return createTask(event)">
+        <div class="form-group">
+          <label>Title *</label>
+          <input type="text" name="title" required placeholder="What needs to be done?" />
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea name="description" placeholder="Details..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Assignee</label>
+          <input type="text" name="assignee" placeholder="e.g. alice" />
+        </div>
+        <div class="form-group">
+          <label>Priority</label>
+          <select name="priority">
+            <option value="low">Low</option>
+            <option value="medium" selected>Medium</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+          <button type="submit" class="btn">Create Task</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // -----------------------------------------------------------------------
+    // Modal
+    // -----------------------------------------------------------------------
+    function openModal() {
+      document.getElementById('create-modal').classList.add('active');
+    }
+    function closeModal() {
+      document.getElementById('create-modal').classList.remove('active');
+      document.getElementById('create-form').reset();
+    }
+
+    // -----------------------------------------------------------------------
+    // Create Task
+    // -----------------------------------------------------------------------
+    async function createTask(e) {
+      e.preventDefault();
+      const form = e.target;
+      const data = {
+        title: form.title.value,
+        description: form.description.value || undefined,
+        assignee: form.assignee.value || undefined,
+        priority: form.priority.value,
+      };
+      try {
+        const res = await fetch('/api/tasks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        if (res.ok) {
+          closeModal();
+          location.reload();
+        } else {
+          const err = await res.json();
+          alert('Error: ' + (err.detail || err.error || JSON.stringify(err)));
+        }
+      } catch (err) {
+        alert('Network error: ' + err.message);
+      }
+      return false;
+    }
+
+    // -----------------------------------------------------------------------
+    // Update Status
+    // -----------------------------------------------------------------------
+    async function updateStatus(taskId, status) {
+      try {
+        const res = await fetch('/api/tasks/' + taskId, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status }),
+        });
+        if (res.ok) location.reload();
+        else alert('Failed to update task');
+      } catch (err) {
+        alert('Network error: ' + err.message);
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // Delete Task
+    // -----------------------------------------------------------------------
+    async function deleteTask(taskId) {
+      if (!confirm('Delete this task?')) return;
+      try {
+        const res = await fetch('/api/tasks/' + taskId, { method: 'DELETE' });
+        if (res.ok) location.reload();
+        else alert('Failed to delete task');
+      } catch (err) {
+        alert('Network error: ' + err.message);
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // SSE — real-time activity feed
+    // -----------------------------------------------------------------------
+    (function connectSSE() {
+      const feed = document.getElementById('activity-feed');
+      const evtSource = new EventSource('/events');
+
+      evtSource.onmessage = function(e) {
+        try {
+          const evt = JSON.parse(e.data);
+          const item = document.createElement('div');
+          item.className = 'activity-item';
+          item.innerHTML =
+            '<div class="event-type">' + escapeHtml(evt.type) + '</div>' +
+            '<div class="event-title">' + escapeHtml(evt.title || evt.taskId || 'Task update') + '</div>' +
+            '<div class="event-time">' + new Date().toLocaleString() + '</div>';
+
+          // Remove "no activity" message if present
+          const empty = feed.querySelector('.activity-empty');
+          if (empty) empty.remove();
+
+          feed.prepend(item);
+
+          // Keep max 20 items in the DOM
+          while (feed.children.length > 20) {
+            feed.removeChild(feed.lastChild);
+          }
+        } catch (_) { /* ignore non-JSON */ }
+      };
+
+      evtSource.onerror = function() {
+        // reconnect is automatic with EventSource
+      };
+    })();
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str || '';
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>

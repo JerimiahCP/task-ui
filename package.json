@@ -1,0 +1,15 @@
+{
+  "name": "task-ui",
+  "version": "1.0.0",
+  "description": "Task Management Dashboard — calls task-api",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "express": "^5.0.0",
+    "ejs": "^3.1.10",
+    "node-fetch": "^3.3.2"
+  }
+}
