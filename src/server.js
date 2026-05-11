@@ -157,12 +157,13 @@ app.get("/events", (req, res) => {
 // ---------------------------------------------------------------------------
 const PROXY_METHODS = ["GET", "POST", "PATCH", "PUT", "DELETE"];
 
-app.all("/api/tasks/:path(*)?", async (req, res) => {
+app.all("/api/tasks{/*path}", async (req, res) => {
   if (!PROXY_METHODS.includes(req.method)) {
     return res.status(405).json({ error: "method not allowed" });
   }
 
-  const downstream = `/tasks${req.params.path ? "/" + req.params.path : ""}`;
+  const segments = req.params.path;
+  const downstream = `/tasks${segments && segments.length ? "/" + segments.join("/") : ""}`;
   const queryString = new URLSearchParams(req.query).toString();
   const fullPath = queryString ? `${downstream}?${queryString}` : downstream;
 
