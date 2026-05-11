@@ -78,7 +78,7 @@ async function renderDashboard(_req, res) {
   let tasks = [];
   let apiError = null;
   try {
-    const result = await apiFetch("/tasks");
+    const result = await apiFetch("/api/tasks");
     if (result.ok) {
       tasks = Array.isArray(result.body) ? result.body : result.body.tasks || [];
     } else {
@@ -153,7 +153,7 @@ app.get("/events", (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
-// Proxy: /api/tasks/* → API_URL/tasks/*
+// Proxy: /api/tasks/* → API_URL/api/tasks/*
 // ---------------------------------------------------------------------------
 const PROXY_METHODS = ["GET", "POST", "PATCH", "PUT", "DELETE"];
 
@@ -163,7 +163,7 @@ app.all("/api/tasks{/*path}", async (req, res) => {
   }
 
   const segments = req.params.path;
-  const downstream = `/tasks${segments && segments.length ? "/" + segments.join("/") : ""}`;
+  const downstream = `/api/tasks${segments && segments.length ? "/" + segments.join("/") : ""}`;
   const queryString = new URLSearchParams(req.query).toString();
   const fullPath = queryString ? `${downstream}?${queryString}` : downstream;
 
